@@ -1,0 +1,52 @@
+# day2_mat.exe 运行结果（cv::Mat 内存模型实验）
+
+- 程序：build/day2_mat.exe（源码 day2_mat.cpp）
+- 运行时间：2026-11-04 19:36:11
+- 平台：Windows / AMD64，退出码 0
+
+```text
+
+================ 0. 基准图 ================
+img            rows=480 cols=640 channels=3 depth=0 elemSize=3 step[0]=1920 total=307200 u->refcount=1
+预期：total=307200，elemSize=3，step[0]=1920，total*elemSize = 921600，rows*step[0] = 921600
+>>> 两者相等，因为这是「连续」Mat（isContinuous=1）
+
+================ 1. 浅拷贝 Mat b = a ================
+a              rows=480 cols=640 channels=3 depth=0 elemSize=3 step[0]=1920 total=307200 u->refcount=3
+b              rows=480 cols=640 channels=3 depth=0 elemSize=3 step[0]=1920 total=307200 u->refcount=3
+预期：b 的 data 指针和 a 相同 = 是
+> 注意：refcount=3 而不是 2 —— 因为 img、a、b 三者都引用同一块数据（img 还没析构），refcount 统计的是「所有活着的引用」，不是「a 和 b 两个」。
+对 b setTo 红色后，a 的 (10,10) 像素 BGR = [0, 0, 255]（预期 approx 0,0,255）
+>>> 结论：改 b 影响了 a，因为共享同一块数据。这就是「写时复制」的反面——OpenCV 的 Mat 是引用语义，不会自动 COW。
+
+================ 2. 深拷贝 a.clone() ================
+c              rows=480 cols=640 channels=3 depth=0 elemSize=3 step[0]=1920 total=307200 u->refcount=1
+预期：c.data 与 a.data 不同 = 是（不同）
+预期：c 的 refcount 独立，初始为 1
+对 c setTo 绿色后，a 的 (10,10) 像素 BGR = [0, 0, 255]（预期仍为 0,0,255，没变）
+>>> 结论：clone() 分配了新内存并拷贝数据，c 和 a 完全独立。
+
+================ 3. 引用计数变化 ================
+p 创建后：u->refcount = 1（预期 1）
+q = p 之后：p.u->refcount = 2（预期 2）
+q 离开作用域后：p.u->refcount = 1（预期 1）
+>>> 结论：refcount 由 UMatData 持有，引用归零时才真正释放内存。
+
+================ 4. ROI 的 total*elemSize vs rows*step[0] ================
+roi            rows=200 cols=200 channels=3 depth=0 elemSize=3 step[0]=1920 total=40000 u->refcount=4
+roi.total()*roi.elemSize() = 120000
+roi.rows * roi.step[0]     = 384000
+roi.isContinuous()         = 0（预期 0）
+>>> 两个数不相等！因为 roi 的 step[0] 继承了父图的 1920，它只是父图内存上的一个窗口，实际跨越 200*1920 字节。
+
+================ 5. copyTo vs clone ================
+d(copyTo)      rows=480 cols=640 channels=3 depth=0 elemSize=3 step[0]=1920 total=307200 u->refcount=1
+copyTo 后 d.data 与 a.data 不同 = 是
+copyTo 到预分配 Mat e 后，e.data 是否被复用 = 是（复用）
+>> 为什么能复用：copyTo 只在「目标为空、尺寸/类型不匹配或非连续」时才重新分配。
+copyTo 到尺寸不匹配的 g 后，g.data 是否重新分配 = 是（重新分配，因为尺寸不匹配）
+clone 后 f.data 与 a.data 不同 = 是
+
+================ 全部完成 ================
+请在终端对照每一条「预期 vs 实际」，有出入的贴给我。
+```
