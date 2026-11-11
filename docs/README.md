@@ -1,7 +1,7 @@
 # 工业视觉检测与尺寸测量实验
 
 C++17 / OpenCV 4.x 实现的工业视觉链路练习：**相机标定 → 畸变校正 → 光照归一化 → 缺陷检测 → 尺寸测量**。
-每一步都给出可量化的误差，而不是只写"跑通了"。
+
 
 ```
 day4_calib  ──►  day4_check / day4_straight  ──►  day5_detect  ──►  day6_measure
