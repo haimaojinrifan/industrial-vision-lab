@@ -63,13 +63,14 @@ add_cv_app(day4_check     src/day4_check.cpp)
 add_cv_app(day4_straight  src/day4_straight.cpp)
 add_cv_app(day5_detect    src/day5_detect.cpp)
 add_cv_app(day6_measure   src/day6_measure.cpp)
+add_cv_app(day8_homography src/day8_homography.cpp)
 
 # Synthetic data generators (they do not need a camera)
 add_cv_app(gen_workpiece  tools/gen_workpiece.cpp)
 add_cv_app(gen_circle     tools/gen_circle.cpp)
 
 # day6_measure uses std::filesystem -> needs C++17
-set_target_properties(day6_measure PROPERTIES
+set_target_properties(day6_measure day8_homography PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON)
 
@@ -93,3 +94,4 @@ if(BUILD_PROBES)
         endif()
     endforeach()
 endif()
+

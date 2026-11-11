@@ -25,6 +25,9 @@ desktop.ini
 measure_vis.png
 calib_vis.png
 batch_vis_*.png
+rectified.png
+rectify_vis.png
+self_homography_*.png
 seg_mask.png
 straight_check.png
 self_rect.png
